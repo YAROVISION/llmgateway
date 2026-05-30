@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  llm-gateway:
+    build: .
+    container_name: llm-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Зберігаємо failures.json між перезапусками контейнера
+      - ./scratch:/app/scratch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

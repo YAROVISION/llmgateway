@@ -1,0 +1,31 @@
+name: Deploy LLM Gateway
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Hostinger VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT || 22 }}
+          script: |
+            cd /root/llm-gateway
+            if [ ! -d ".git" ]; then
+              echo "❌ Репозиторій не знайдено! Спочатку клонуйте його вручну на сервері."
+              exit 1
+            fi
+            echo "📥 Оновлення коду з GitHub..."
+            git pull origin main
+            echo "🚀 Збірка та перезапуск Docker-контейнерів..."
+            docker compose up --build -d
+            echo "✅ Деплой завершено успішно!"

@@ -1,0 +1,13 @@
+.env
+.env.local
+.git
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+scratch/*.json
+.venv
+venv
+*.md
+.dockerignore
