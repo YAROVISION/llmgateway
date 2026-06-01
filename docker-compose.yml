@@ -23,3 +23,16 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - traefik_default
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.llmgateway.rule=Host(`llmgateway.lexis.blog`)
+      - traefik.http.routers.llmgateway-secure.rule=Host(`llmgateway.lexis.blog`)
+      - traefik.http.routers.llmgateway-secure.tls=true
+      - traefik.http.services.llmgateway.loadbalancer.server.port=8000
+
+networks:
+  traefik_default:
+    external: true
+

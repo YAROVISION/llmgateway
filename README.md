@@ -120,6 +120,74 @@ console.log(res.choices[0].message.content);
 
 ---
 
+## Деплой (Production) — Hostinger VPS + Traefik
+
+Цей план деплою спеціально адаптований для хоста **Hostinger VPS** з використанням панелі **Docker Manager (Compose)** та **Traefik** як глобального reverse proxy для отримання SSL-сертифікатів.
+
+### 📋 Чекліст налаштування та запуску
+
+1. **Підготовка репозиторію (GitHub)**
+   Переконайтеся, що в корені проекту присутні:
+   - `Dockerfile`
+   - `docker-compose.yml` (з Traefik labels)
+   - `requirements.txt`
+   - `.env.example`
+
+2. **Налаштування Docker-мережі**
+   Оскільки деплой виконується разом із Traefik, контейнер має бути в одній мережі з Traefik. Якщо Traefik використовує зовнішню мережу, переконайтеся, що вона підключена у `docker-compose.yml`.
+
+3. **Створення файлу `.env` на сервері**
+   У Hostinger Docker Manager (Compose) або через SSH створіть файл `.env` на базі `.env.example`:
+   ```bash
+   cp .env.example .env
+   nano .env
+   ```
+   Обов'язково заповніть:
+   - `GATEWAY_API_KEY` (унікальний токен авторизації)
+   - API ключі провайдерів (`GROQ_API_KEY` тощо)
+
+4. **Безпека та Firewall (Критично для Hostinger)**
+   > [!IMPORTANT]
+   > **НЕ відкривайте порт `8000` у Firewall панелі Hostinger!**
+   > Весь трафік має надходити виключно через порти `80` (HTTP) та `443` (HTTPS) під управлінням Traefik. Відкриття порту `8000` назовні створить загрозу безпеці, дозволяючи звертатися до вашого API в обхід шифрування та лімітів.
+
+5. **Збереження стану (Volumes)**
+   Шлях у `docker-compose.yml` налаштований так:
+   `- ./scratch:/app/scratch`
+   Це гарантує, що файл `failures.json` (статус заблокованих моделей) збережеться між перезапусками контейнера.
+
+6. **Запуск деплою**
+   * **Через Hostinger Docker Manager:** Оберіть *Compose from URL* (вкажіть лінк на GitHub) або *Compose manually* (скопіюйте вміст `docker-compose.yml`) та натисніть **Deploy**.
+   * **Через SSH Термінал:**
+     ```bash
+     docker compose up -d --build
+     ```
+
+7. **Перевірка роботи**
+   Перевірте доступність через домен (без вказання порту 8000):
+   ```bash
+   curl -f https://llmgateway.lexis.blog/health
+   ```
+   Для моніторингу логів у терміналі використовуйте:
+   ```bash
+   docker compose logs -f
+   ```
+
+### 📡 Підключення з клієнтів (Production)
+
+Замість `http://localhost:8000/v1` використовуйте публічний HTTPS-ендпоінт:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://llmgateway.lexis.blog/v1",
+    api_key="your-gateway-key"   # GATEWAY_API_KEY з вашого .env
+)
+```
+
+---
+
 ## Структура проекту
 
 ```
